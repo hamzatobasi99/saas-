@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+python-dotenv
+pydantic
+openai
+qdrant-client
+fastembed
+python-multipart
+httpx
+sqlalchemy>=2.0.0
+asyncpg
+psycopg2-binary
+alembic
+cryptography

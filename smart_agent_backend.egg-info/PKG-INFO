@@ -1,0 +1,13 @@
+Metadata-Version: 2.4
+Name: smart-agent-backend
+Version: 0.1.0
+Summary: FastAPI Backend for Smart AI SaaS Platform
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: fastapi>=0.110.0
+Requires-Dist: uvicorn[standard]>=0.28.0
+Requires-Dist: python-dotenv>=1.0.1
+Requires-Dist: python-multipart>=0.0.9
+Requires-Dist: pypdf>=4.1.0
+Requires-Dist: openai>=1.14.0
+Requires-Dist: qdrant-client>=1.8.0

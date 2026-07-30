@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "smart-agent-backend"
+version = "0.1.0"
+description = "FastAPI Backend for Smart AI SaaS Platform"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.28.0",
+    "python-dotenv>=1.0.1",
+    "python-multipart>=0.0.9",
+    "pypdf>=4.1.0",
+    "openai>=1.14.0",
+    "qdrant-client>=1.8.0",
+]
