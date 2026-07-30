@@ -1,5 +1,6 @@
+import re
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
@@ -32,6 +33,16 @@ app = FastAPI(
     docs_url="/api/docs",
     redoc_url="/api/redoc",
 )
+
+@app.middleware("http")
+async def normalize_url_middleware(request: Request, call_next):
+    """
+    طبقة وسيطة (Middleware) لتنظيف الروابط القادمة من الواجهة الأمامية.
+    تستبدل أي شرطة مائلة مزدوجة (//) بشرطة واحدة (/) قبل معالجة الطلب.
+    """
+    if "//" in request.scope["path"]:
+        request.scope["path"] = re.sub(r"//+", "/", request.scope["path"])
+    return await call_next(request)
 
 # إعدادات CORS للسماح لتطبيق Next.js بالاتصال بالـ API
 app.add_middleware(
