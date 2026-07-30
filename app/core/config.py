@@ -7,7 +7,8 @@ class Settings(BaseSettings):
 
     # Database & Security
     DATABASE_URL: str
-    SECRET_KEY: str  # Used for encrypting WhatsApp Tokens and JWTs
+    SECRET_KEY: str  # Used for encrypting WhatsApp Tokens
+    SUPABASE_JWT_SECRET: Optional[str] = None # Added for Supabase Auth verification
     
     # Qdrant Vector Store
     QDRANT_URL: str = ":memory:"

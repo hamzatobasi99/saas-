@@ -13,19 +13,16 @@ from app.database.models import User
 
 logger = logging.getLogger("security")
 
-# إعداد OAuth2 ليتوافق مع Swagger UI واستقبال التوكن عبر Header: Authorization: Bearer <token>
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 class TokenPayload(BaseModel):
-    """نموذج Pydantic لضمان وجود البيانات الأساسية داخل الـ JWT Token"""
     user_id: str
     tenant_id: str
 
-async def get_current_tenant(token: str = Depends(oauth2_scheme)) -> TokenPayload:
-    """
-    Dependency (تبعيات) يتم حقنها في مسارات الـ API.
-    تقوم بفك تشفير التوكن، التحقق من صلاحيته، واستخراج معرف الشركة.
-    """
+async def get_current_tenant(
+    token: str = Depends(oauth2_scheme),
+    db: AsyncSession = Depends(get_db)
+) -> TokenPayload:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials or token has expired",
@@ -33,26 +30,33 @@ async def get_current_tenant(token: str = Depends(oauth2_scheme)) -> TokenPayloa
     )
     
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        # فك تشفير توكن Supabase باستخدام المفتاح الخاص به أو مفتاح السيرفر المعتمد
+        secret = settings.SUPABASE_JWT_SECRET or settings.SECRET_KEY
+        payload = jwt.decode(token, secret, algorithms=["HS256"], options={"verify_aud": False})
         
-        user_id: str = payload.get("sub")
-        tenant_id: str = payload.get("tenant_id")
+        # استخراج البريد الإلكتروني أو الـ sub (Supabase user id)
+        supabase_user_id: str = payload.get("sub")
+        email: str = payload.get("email")
         
-        if user_id is None or tenant_id is None:
-            logger.warning("Token decoded successfully but missing sub (user_id) or tenant_id.")
+        if not supabase_user_id:
+            logger.warning("Token decoded successfully but missing sub.")
             raise credentials_exception
             
-        return TokenPayload(user_id=user_id, tenant_id=tenant_id)
+        # البحث عن المستخدم في قاعدة البيانات الخاصة بنا مطابقةً لـ Supabase ID أو البريد الإلكتروني
+        result = await db.execute(select(User).where(User.email == email))
+        user = result.scalar_one_or_none()
+        
+        if not user:
+            logger.warning(f"Authenticated Supabase user {email} not found in local database.")
+            raise credentials_exception
+            
+        return TokenPayload(user_id=str(user.id), tenant_id=str(user.tenant_id))
         
     except JWTError as e:
         logger.warning(f"JWT Validation error: {str(e)}")
         raise credentials_exception
 
 def require_role(allowed_roles: list[str]):
-    """
-    Dependency للتحقق من صلاحيات المستخدم (RBAC).
-    يستخرج المستخدم من قاعدة البيانات للتحقق من دوره الحالي (owner, admin, employee).
-    """
     async def role_checker(
         current_tenant: TokenPayload = Depends(get_current_tenant),
         db: AsyncSession = Depends(get_db)
