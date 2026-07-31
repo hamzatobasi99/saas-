@@ -45,9 +45,10 @@ async def normalize_url_middleware(request: Request, call_next):
     return await call_next(request)
 
 # إعدادات CORS للسماح لتطبيق Next.js بالاتصال بالـ API
+# تم استبدال ["*"] بـ allow_origin_regex ليتوافق مع allow_credentials=True في بيئة الإنتاج
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # سيتم تقييدها بدومين الإنتاج لاحقاً
+    allow_origin_regex=r"https?://.*",  # يسمح بطلبات Vercel (https) و Localhost (http)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
